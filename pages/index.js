@@ -3,7 +3,7 @@ import Head from 'next/head'
 export default function Home() {
   return (
     <div>
-      <p>ok</p>
+      <h1>Dashboard</h1>
     </div>
   )
 }

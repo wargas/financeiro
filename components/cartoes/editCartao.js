@@ -27,6 +27,7 @@ const EditCartao = ({ data, onClose }) => {
             vencimento: ""
         },
         onSubmit: async (values) => {
+
             setLoading(true)
             try {
                 const dados = {
@@ -34,9 +35,16 @@ const EditCartao = ({ data, onClose }) => {
                     limite: parseFloat(values.limite.replace(/\./g, "").replace(",", "."))
                 }
 
-                const { data: result } = await axios.post("/api/cartoes/create", dados);
+                if (data) {
+                    const { data: result } = await axios.put(`/api/cartoes/update/${data._id}`, dados);
 
-                onClose(result)
+                    onClose(result)
+                } else {
+                    const { data: result } = await axios.post("/api/cartoes/create", dados);
+
+                    onClose(result)
+                }
+
 
             } catch (error) {
 
