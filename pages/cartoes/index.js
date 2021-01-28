@@ -36,6 +36,7 @@ const Cartoes = () => {
 
     return (
         <div>
+            
             <Loading show={loading} />
             <h1>Cartões</h1>
             <div className="row">
@@ -46,10 +47,10 @@ const Cartoes = () => {
                             style={{ cursor: "pointer", width: "100%" }}
                             className="card shadow-sm">
                             <div className="card-body">
-                                <h5 className="card-title">{cartao.nome}</h5>
+                                <h5 style={{fontWeight: 700}} className="card-title">{cartao.nome}</h5>
                                 <h6 className="text-muted card-subtitle ">
                                     R$ {VMasker.toMoney(cartao.limite * 100)}</h6>
-                                <p className="card-text">Vence dia {
+                                <p style={{fontWeight: 300}} className="card-text">Vence dia {
                                     DateTime.fromObject({ day: cartao.vencimento }).plus({ month: 1 }).toFormat("D")
                                 }</p>
                             </div>
