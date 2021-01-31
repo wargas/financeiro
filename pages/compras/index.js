@@ -1,7 +1,12 @@
+import Toolbar from "../../components/Toolbar"
+
 const Compras = () => {
     return (
         <div>
-            <h1>Compras</h1>
+            <Toolbar>
+                <Toolbar.Title>Compras</Toolbar.Title>
+                <Toolbar.SubTitle>15 Registros encontrados</Toolbar.SubTitle>
+            </Toolbar>
         </div>
     )
 }

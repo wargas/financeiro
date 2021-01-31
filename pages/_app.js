@@ -9,9 +9,7 @@ function MyApp({ Component, pageProps }) {
         <title>Dashboard</title>
       </Head>
       <Navbar />
-      <div className="container-fluid mt-3">
-        <Component {...pageProps} />
-      </div>
+      <Component {...pageProps} />
     </div>
   )
 }

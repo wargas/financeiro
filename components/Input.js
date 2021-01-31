@@ -12,8 +12,12 @@ const Input = ({ onChange = () => { }, ...rest }) => {
 
     const handlerKeyUp = (ev) => {
 
-        if(rest.money) {
+        if (rest.money) {
             ev.target.value = VMasker.toMoney(ev.target.value.replace(".", ""))
+        }
+
+        if (rest.mask) {
+            ev.target.value = VMasker.toPattern(ev.target.value, rest.mask)
         }
 
         onChange(ev)
