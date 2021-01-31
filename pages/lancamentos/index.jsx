@@ -93,8 +93,8 @@ export default () => {
             </Toolbar>
             <div className="container">
                 <div className="d-flex pb-3">
-                    <h3>{competencia.toFormat("MMMM/yyyy", { locale: "pt-BR" })}</h3>
-                    <h3 className="ml-3">R$ {toMoney(saldo.toFixed(2))}</h3>
+                    
+                    <h3 className={`ml-3 ${saldo < 0 ? 'text-danger' : 'text-info'}`}>R$ {saldo < 0 ? '-' : ''} {toMoney(saldo.toFixed(2))}</h3>
                     <Dropdown className="ml-auto" style={{ height: 41.6 }}>
                         <Dropdown.Toggle as={'button'} className="form-control">
                             {cartao?.nome || 'Selecione um cartão'}
@@ -110,6 +110,7 @@ export default () => {
                         <button onClick={() => setCompetencia(old => old.minus({ month: 1 }))} className="btn btn-outline-info">
                             {competencia.minus({ month: 1 }).toFormat('MM/yyyy')}
                         </button>
+                        <div className="btn btn-outline-info">{competencia.toFormat("MMMM/yyyy", { locale: "pt-BR" })}</div>
                         <button onClick={() => setCompetencia(old => old.plus({ month: 1 }))} className="btn btn-outline-info">
                             {competencia.plus({ month: 1 }).toFormat('MM/yyyy')}
                         </button>
@@ -150,13 +151,13 @@ export default () => {
                                             </td>
                                             <td>{parcela.lancamento?.cartao?.nome}</td>
                                             <td>{DateTime.fromISO(parcela.competencia).toFormat("MM/yyyy")}</td>
-                                            <td className="text-right">R$ {toMoney(parcela.valor.toFixed(2))}</td>
+                                            <td className={`text-right ${parcela.lancamento.tipo === 'despesa' ? 'text-danger' : 'text-info'}`}>R$ {parcela.lancamento.tipo === 'despesa' ? '-' : ''} {toMoney(parcela.valor.toFixed(2))}</td>
                                         </tr>
                                     ))}
                                 <tr>
                                     <td colSpan="3"></td>
                                     <td className="text-right" colSpan="2">
-                                        <span className={saldo < 0 ? 'text-danger' : ''} style={{ fontWeight: 'bold' }}> R$ {saldo < 0 ? '-' : ''} {toMoney(saldo.toFixed(2))}</span>
+                                        <span className={saldo < 0 ? 'text-danger' : 'text-info'} style={{ fontWeight: 'bold', fontSize: 18 }}> R$ {saldo < 0 ? '-' : ''} {toMoney(saldo.toFixed(2))}</span>
                                     </td>
                                 </tr>
                             </tbody>
