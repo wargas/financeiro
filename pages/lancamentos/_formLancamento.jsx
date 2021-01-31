@@ -10,7 +10,6 @@ const FormLancamento = ({ data, onClose }) => {
 
     const [loading, setLoading] = useState(false);
     const [parcelas, setParcelas] = useState([]);
-    const [cartoes, setCartoes] = useState([]);
 
     useEffect(() => {
 
@@ -27,7 +26,7 @@ const FormLancamento = ({ data, onClose }) => {
                 valor: toMoney(lancamento.valor.toFixed(2)),
                 parcela: toMoney(lancamento.parcela.toFixed(2)),
                 parcelas: lancamento.parcelas,
-                cartao: lancamento.cartao,
+                cartao: lancamento?.cartao,
                 primeira_parcela: lancamento.primeira_parcela
             })
         }
@@ -107,20 +106,7 @@ const FormLancamento = ({ data, onClose }) => {
         formik.values.parcelas,
         formik.values.parcela,
         formik.values.primeira_parcela])
-
-
-    const loadCartoes = async () => {
-        setLoading(true)
-        try {
-            const { data: items } = await axios.get("/api/cartoes");
-            setCartoes(items)
-        } catch (error) {
-
-        }
-        setLoading(false)
-    }
-
-
+   
     return (
         <div>
             <Loading show={loading} />
@@ -147,7 +133,7 @@ const FormLancamento = ({ data, onClose }) => {
                             name="cartao"
                             className="form-control">
                             <option value="">...</option>
-                            {data.cartoes.map(cartao => (
+                            {data?.cartoes.map(cartao => (
                                 <option key={cartao._id} value={cartao._id}>{cartao.nome}</option>
                             ))}
                         </select>
