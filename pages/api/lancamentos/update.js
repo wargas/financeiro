@@ -5,8 +5,9 @@ import { DateTime } from 'luxon';
 export default async (req, res) => {
 
     const { body: dados } = req;
-    const { db, client } = await connect();
-
+    const { id } = req.query;
+    const { db } = await connect();
+    
     dados.parcelas = Array(dados.parcelas).fill().map((parcela, index) => {
         return {
             descricao: `${dados.descricao} ${index + 1}/${dados.parcelas}`,
@@ -18,7 +19,7 @@ export default async (req, res) => {
     });
     dados.cartao = (dados.cartao === '') ? '' : ObjectId(dados.cartao) 
 
-    const data = await db.collection('lancamentos').insertOne(dados)
+    const data = await db.collection('lancamentos').updateOne({_id: ObjectId(id)}, {$set: dados})
 
-    res.send(data.ops[0]);
+    res.send(data)
 }

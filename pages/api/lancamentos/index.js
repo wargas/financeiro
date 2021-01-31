@@ -2,9 +2,25 @@ import connect from '../../../utils/database';
 
 export default async (req, res) => {
 
-    const { db } = await connect();
+    const { db, client } = await connect();
 
-    const result = await db.collection('lancamentos').find().toArray();
+    const result = await db.collection('lancamentos').aggregate([{
+        $lookup: {
+            from: 'cartoes',
+            localField: 'cartao',
+            foreignField: '_id',
+            as: 'cartoes'
+        }
+    }]).map(item => {
 
-    res.send(result) 
+        const [cartao = null] = item.cartoes;
+
+        item.cartao = cartao;
+
+        item.cartoes = undefined;
+
+        return item;
+    }).toArray();
+
+    res.send(result);
 }

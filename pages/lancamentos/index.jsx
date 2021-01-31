@@ -1,6 +1,7 @@
 import axios from "axios";
 import { DateTime, Settings } from "luxon";
 import { useEffect, useState } from "react"
+import { Dropdown } from "react-bootstrap";
 import { toMoney } from "vanilla-masker";
 import { Loading, useDialog } from "../../components"
 import Toolbar from "../../components/Toolbar";
@@ -13,10 +14,13 @@ export default () => {
     const [loading, setLoading] = useState(false);
     const [items, setItems] = useState([]);
     const [saldo, setSaldo] = useState(0);
-    const [competencia, setCompetencia] = useState(DateTime.local())
+    const [competencia, setCompetencia] = useState(DateTime.local());
+    const [cartoes, setCartoes] = useState([])
+    const [cartao, setCartao] = useState(null);
 
     useEffect(() => {
-        loadLancamentos()
+        loadLancamentos();
+        loadCartoes();
     }, [])
 
     useEffect(() => {
@@ -30,7 +34,8 @@ export default () => {
 
             return acc;
         }, 0))
-    }, [items, competencia])
+    }, [items, competencia, cartao])
+
 
     const [Dialog, openDialog] = useDialog(FormLancamento, (result) => {
         loadLancamentos();
@@ -42,14 +47,10 @@ export default () => {
             const { data } = await axios.get("/api/lancamentos");
 
             setItems(data.reduce((acc, item) => {
-
                 const _parcelas = item.parcelas.map((parcela) => {
-
                     parcela.lancamento = { ...item, parcelas: undefined }
-
                     return parcela;
                 })
-
                 return [...acc, ..._parcelas]
             }, []))
         } catch (error) {
@@ -58,9 +59,25 @@ export default () => {
         setLoading(false)
     }
 
+    const loadCartoes = async () => {
+        setLoading(true)
+        try {
+            const { data: items } = await axios.get("/api/cartoes");
+
+            setCartoes(items)
+        } catch (error) {
+
+        }
+        setLoading(false)
+    }
+
 
     const filterByCompetencia = (parcela) => {
-        return DateTime.fromISO(parcela.competencia).hasSame(competencia, "month")
+
+        if (cartao !== null && parcela.lancamento?.cartao?._id !== cartao?._id) {
+            return false;
+        }
+        return DateTime.fromISO(parcela.competencia).plus({ hours: 4 }).hasSame(competencia, "month")
     }
 
     return (
@@ -77,7 +94,19 @@ export default () => {
             <div className="container">
                 <div className="d-flex pb-3">
                     <h3>{competencia.toFormat("MMMM/yyyy", { locale: "pt-BR" })}</h3>
-                    <div className="btn-group ml-auto">
+                    <h3 className="ml-3">R$ {toMoney(saldo.toFixed(2))}</h3>
+                    <Dropdown className="ml-auto" style={{ height: 41.6 }}>
+                        <Dropdown.Toggle as={'button'} className="form-control">
+                            {cartao?.nome || 'Selecione um cartão'}
+                        </Dropdown.Toggle>
+                        <Dropdown.Menu>
+                            <Dropdown.Item onClick={() => setCartao(null)} >Todos</Dropdown.Item>
+                            {cartoes.map(item => (
+                                <Dropdown.Item onClick={() => setCartao(item)} key={item._id}>{item.nome}</Dropdown.Item>
+                            ))}
+                        </Dropdown.Menu>
+                    </Dropdown>
+                    <div className="btn-group ml-3">
                         <button onClick={() => setCompetencia(old => old.minus({ month: 1 }))} className="btn btn-outline-info">
                             {competencia.minus({ month: 1 }).toFormat('MM/yyyy')}
                         </button>
@@ -85,8 +114,9 @@ export default () => {
                             {competencia.plus({ month: 1 }).toFormat('MM/yyyy')}
                         </button>
                     </div>
+
                     <button
-                        onClick={() => openDialog({competencia})}
+                        onClick={() => openDialog({ competencia, cartoes })}
                         className="btn btn-info ml-3">
                         NOVO
                     </button>
@@ -98,6 +128,7 @@ export default () => {
                                 <tr>
                                     <th></th>
                                     <th>Descrição</th>
+                                    <th>Cartão</th>
                                     <th>Competência</th>
                                     <th className="text-right" colSpan="2">Valor</th>
                                 </tr>
@@ -111,8 +142,13 @@ export default () => {
                                                 {parcela.lancamento.tipo === 'despesa' ? 'D' : 'R'}
                                             </td>
                                             <td>
-                                                <span> {parcela.descricao}</span>
+                                                <a onClick={() => openDialog({
+                                                    cartoes,
+                                                    competencia,
+                                                    lancamento: {...parcela.lancamento, parcelas: parcela.total}
+                                                })}> {parcela.descricao}</a>
                                             </td>
+                                            <td>{parcela.lancamento?.cartao?.nome}</td>
                                             <td>{DateTime.fromISO(parcela.competencia).toFormat("MM/yyyy")}</td>
                                             <td className="text-right">R$ {toMoney(parcela.valor.toFixed(2))}</td>
                                         </tr>

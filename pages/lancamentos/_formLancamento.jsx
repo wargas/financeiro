@@ -13,10 +13,23 @@ const FormLancamento = ({ data, onClose }) => {
     const [cartoes, setCartoes] = useState([]);
 
     useEffect(() => {
-        loadCartoes()
 
-        if(data?.competencia) {
+        if (data?.competencia) {
             formik.setFieldValue('primeira_parcela', data?.competencia.toFormat("MM/yyyy"))
+        }
+
+        const { lancamento = null } = data;
+
+        if (lancamento) {
+            formik.setValues({
+                tipo: lancamento.tipo,
+                descricao: lancamento.descricao,
+                valor: toMoney(lancamento.valor.toFixed(2)),
+                parcela: toMoney(lancamento.parcela.toFixed(2)),
+                parcelas: lancamento.parcelas,
+                cartao: lancamento.cartao,
+                primeira_parcela: lancamento.primeira_parcela
+            })
         }
 
     }, [data])
@@ -33,21 +46,32 @@ const FormLancamento = ({ data, onClose }) => {
         },
         onSubmit: async (values) => {
             setLoading(true)
-            const dados = ({
-                ...values,
-                valor: parseFloat(values.valor.replace(/\D/g, "")) / 100,
-                parcela: parseFloat(values.parcela.replace(/\D/g, "")) / 100,
-                parcelas: parseInt(values.parcelas) || 0,
-                primeira_parcela: values.primeira_parcela.length === 7
-                    ? values.primeira_parcela
-                    : DateTime.local().toFormat("MM/yyyy")
-            })
+            try {
 
-            const { data: result } = await axios.post("/api/lancamentos/create", dados);
+                const dados = ({
+                    ...values,
+                    valor: parseFloat(values.valor.replace(/\D/g, "")) / 100,
+                    parcela: parseFloat(values.parcela.replace(/\D/g, "")) / 100,
+                    parcelas: parseInt(values.parcelas) || 0,
+                    primeira_parcela: values.primeira_parcela.length === 7
+                        ? values.primeira_parcela
+                        : DateTime.local().toFormat("MM/yyyy")
+                })
 
+                const { lancamento = null} = data;
+                if (!!lancamento) {
+                    const { data: result } = await axios.put(`/api/lancamentos/update?id=${lancamento._id}`, dados);
+                    onClose(result)
+                } else {
+                    const { data: result } = await axios.post("/api/lancamentos/create", dados);
+                    onClose(result)
+                }
+
+            } catch (error) {
+                console.log('erro aqui', error)
+            }
             setLoading(false)
-            
-            onClose(result)
+
         }
     })
 
@@ -89,9 +113,6 @@ const FormLancamento = ({ data, onClose }) => {
         setLoading(true)
         try {
             const { data: items } = await axios.get("/api/cartoes");
-
-            console.log(items)
-
             setCartoes(items)
         } catch (error) {
 
@@ -126,7 +147,7 @@ const FormLancamento = ({ data, onClose }) => {
                             name="cartao"
                             className="form-control">
                             <option value="">...</option>
-                            {cartoes.map(cartao => (
+                            {data.cartoes.map(cartao => (
                                 <option key={cartao._id} value={cartao._id}>{cartao.nome}</option>
                             ))}
                         </select>
