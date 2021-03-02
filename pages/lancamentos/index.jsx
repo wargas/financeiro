@@ -1,6 +1,6 @@
 import axios from "axios";
 import { DateTime, Settings } from "luxon";
-import { useEffect, useState } from "react"
+import { useCallback, useEffect, useState } from "react"
 import { Dropdown } from "react-bootstrap";
 import { toMoney } from "vanilla-masker";
 import { Loading, useDialog } from "../../components"
@@ -17,14 +17,20 @@ export default () => {
     const [competencia, setCompetencia] = useState(DateTime.local());
     const [cartoes, setCartoes] = useState([])
     const [cartao, setCartao] = useState(null);
+    const [filtreds, setFiltreds] = useState([]);
 
     useEffect(() => {
         loadLancamentos();
         loadCartoes();
     }, [])
 
+    
+
     useEffect(() => {
-        setSaldo(items.filter(filterByCompetencia).reduce((acc, item) => {
+        setSaldo(items
+            .filter(filterByCompetencia)
+            .filter(filterByCartoes)
+            .reduce((acc, item) => {
             if (item.lancamento.tipo === 'receita') {
                 return acc + item.valor
             }
@@ -34,7 +40,11 @@ export default () => {
 
             return acc;
         }, 0))
-    }, [items, competencia, cartao])
+
+        setFiltreds(items
+            .filter(filterByCompetencia)
+            .filter(filterByCartoes))
+    }, [items, competencia, cartoes, cartao])
 
 
     const [Dialog, openDialog] = useDialog(FormLancamento, (result) => {
@@ -64,21 +74,39 @@ export default () => {
         try {
             const { data: items } = await axios.get("/api/cartoes");
 
-            setCartoes(items)
+            setCartoes(items.map(item => {
+                item.selected = true;
+                return item;
+            }))
         } catch (error) {
 
         }
         setLoading(false)
     }
 
+    const toggleCartao = (id) => {
+        setCartoes(_cartoes => _cartoes.map(_cartao => {
 
-    const filterByCompetencia = (parcela) => {
+            if (_cartao._id === id)
+                _cartao.selected = !_cartao?.selected
 
-        if (cartao !== null && parcela.lancamento?.cartao?._id !== cartao?._id) {
-            return false;
-        }
-        return DateTime.fromISO(parcela.competencia).plus({ hours: 4 }).hasSame(competencia, "month")
+            return _cartao;
+        }))
     }
+
+
+    const filterByCompetencia = useCallback((parcela) => {       
+        return DateTime.fromISO(parcela.competencia)
+            .plus({ hours: 4 }).hasSame(competencia, "month")
+    }, [competencia])
+
+    const filterByCartoes = useCallback((parcela) => {
+
+        const ids = cartoes.filter(i => i.selected).map(i => i._id);
+        const id = parcela.lancamento.cartao._id || "";
+
+        return ids.indexOf(id) > -1;
+    }, [cartoes])
 
     return (
         <div>
@@ -93,16 +121,28 @@ export default () => {
             </Toolbar>
             <div className="container">
                 <div className="d-flex pb-3">
-                    
+
                     <h3 className={`ml-3 ${saldo < 0 ? 'text-danger' : 'text-info'}`}>R$ {saldo < 0 ? '-' : ''} {toMoney(saldo.toFixed(2))}</h3>
                     <Dropdown className="ml-auto" style={{ height: 41.6 }}>
-                        <Dropdown.Toggle as={'button'} className="form-control">
-                            {cartao?.nome || 'Selecione um cartão'}
+                        <Dropdown.Toggle style={{width: 300}} as={'button'} className="form-control">
+                            {cartoes.filter(c => c.selected).length} selecionado(s)
                         </Dropdown.Toggle>
-                        <Dropdown.Menu>
-                            <Dropdown.Item onClick={() => setCartao(null)} >Todos</Dropdown.Item>
+                        <Dropdown.Menu style={{width: "100%"}}>
                             {cartoes.map(item => (
-                                <Dropdown.Item onClick={() => setCartao(item)} key={item._id}>{item.nome}</Dropdown.Item>
+                                <div
+                                    className="dropdown-item"
+                                    onClick={() => toggleCartao(item._id)} key={item._id}>
+                                    <div className="d-flex">
+                                        <span>
+                                            {item.nome}
+                                        </span>
+                                        <div className="ml-auto">
+                                            {item.selected && (
+                                                <i className="fas fa-check text-info"></i>
+                                            )}
+                                        </div>
+                                    </div>
+                                </div>
                             ))}
                         </Dropdown.Menu>
                     </Dropdown>
@@ -135,8 +175,7 @@ export default () => {
                                 </tr>
                             </thead>
                             <tbody>
-                                {items
-                                    .filter(filterByCompetencia)
+                                {filtreds
                                     .map((parcela, index) => (
                                         <tr key={index}>
                                             <td>
@@ -146,7 +185,7 @@ export default () => {
                                                 <a onClick={() => openDialog({
                                                     cartoes,
                                                     competencia,
-                                                    lancamento: {...parcela.lancamento, parcelas: parcela.total}
+                                                    lancamento: { ...parcela.lancamento, parcelas: parcela.total }
                                                 })}> {parcela.descricao}</a>
                                             </td>
                                             <td>{parcela.lancamento?.cartao?.nome}</td>
